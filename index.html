@@ -1,65 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>🔐 VengObfuscation Viewer</title>
+  <title>Check Script</title>
   <style>
-    body {
-      background-color: #111;
-      color: white;
-      font-family: monospace;
-      display: flex;
-      justify-content: center;
-      padding: 40px;
-    }
-    .container {
-      background: #1e1e1e;
-      padding: 25px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 600px;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 6px;
-      border: none;
-      font-family: monospace;
-    }
-    button {
-      background: orange;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    pre {
-      background: #222;
-      padding: 15px;
-      margin-top: 20px;
-      white-space: pre-wrap;
-      border-radius: 10px;
-      overflow-x: auto;
-    }
-    .debug {
-      font-size: 13px;
-      color: #999;
-      margin-top: 20px;
-    }
+    body { background:#111; color:#fff; font-family:monospace; padding:40px; }
+    input, button { width:100%; padding:10px; margin-top:10px; border:none; border-radius:5px; }
+    button { background:orange; color:#000; font-weight:bold; }
+    pre { background:#222; padding:10px; margin-top:20px; border-radius:5px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>🔑 Enter Password to View Script</h2>
-    <input id="password" type="password" placeholder="Enter password..." />
-    <button onclick="check()">Unlock Script</button>
-
-    <div id="output"></div>
-    <div id="debug" class="debug"></div>
-  </div>
+  <h2>🔐 Script Viewer</h2>
+  <input id="password" placeholder="Enter password..." />
+  <button onclick="check()">Unlock</button>
+  <div id="result"></div>
+  <pre id="debug"></pre>
 
   <script>
-    // Get UID from URL like ?uid=xxxx
     function getUIDFromURL() {
       const params = new URLSearchParams(window.location.search);
       return params.get('uid') || '';
@@ -69,34 +26,38 @@
     const dbUrl = `https://ta-bin-2-default-rtdb.firebaseio.com/data/${uid}.json`;
 
     async function check() {
-      const pwInput = document.getElementById("password").value;
-      const out = document.getElementById("output");
+      const pwInput = document.getElementById("password").value.trim();
+      const result = document.getElementById("result");
       const debug = document.getElementById("debug");
+
+      if (!uid) {
+        result.innerHTML = "❌ UID not found in URL!";
+        return;
+      }
 
       try {
         const res = await fetch(dbUrl);
         const data = await res.json();
 
+        debug.textContent = JSON.stringify(data, null, 2);
+
         if (!data) {
-          out.innerHTML = "❌ Script not found!";
-          debug.innerHTML = `UID: ${uid} <br> Firebase response: null`;
+          result.innerHTML = "❌ Script not found.";
           return;
         }
 
-        // Trim + case-insensitive check
-        const inputPw = pwInput.trim().toLowerCase();
-        const storedPw = data.password.trim().toLowerCase();
+        const inputPw = pwInput.toLowerCase();
+        const realPw = data.password.trim().toLowerCase();
 
-        debug.innerHTML = `UID: ${uid} <br> Typed password: ${inputPw} <br> Stored password: ${storedPw}`;
-
-        if (inputPw === storedPw) {
-          out.innerHTML = `<pre>${data.script}</pre>`;
+        if (inputPw === realPw) {
+          result.innerHTML = `<pre>${data.script}</pre>`;
         } else {
-          out.innerHTML = "❌ Incorrect password!";
+          result.innerHTML = "❌ Incorrect password.";
         }
-      } catch (err) {
-        out.innerHTML = "⚠️ Error loading script.";
-        debug.innerHTML = `UID: ${uid} <br> Error: ${err.message}`;
+
+      } catch (e) {
+        result.innerHTML = "⚠️ Error fetching script.";
+        debug.textContent = e.message;
       }
     }
   </script>
