@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Script Viewer 🔐</title>
+  <meta charset="UTF-8" />
+  <title>🔐 VengObfuscation Viewer</title>
   <style>
     body {
       background-color: #111;
       color: white;
       font-family: monospace;
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      justify-content: center;
       padding: 40px;
     }
     .container {
       background: #1e1e1e;
-      padding: 20px;
+      padding: 25px;
       border-radius: 12px;
       width: 90%;
       max-width: 600px;
@@ -26,10 +25,12 @@
       margin-top: 10px;
       border-radius: 6px;
       border: none;
+      font-family: monospace;
     }
     button {
       background: orange;
       color: white;
+      font-weight: bold;
       cursor: pointer;
     }
     pre {
@@ -40,23 +41,37 @@
       border-radius: 10px;
       overflow-x: auto;
     }
+    .debug {
+      font-size: 13px;
+      color: #999;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>🔑 Enter Password to View Script</h2>
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="check()">Unlock</button>
+    <input id="password" type="password" placeholder="Enter password..." />
+    <button onclick="check()">Unlock Script</button>
+
     <div id="output"></div>
+    <div id="debug" class="debug"></div>
   </div>
 
   <script>
-    const uid = window.location.pathname.split("/").pop();
+    // Get UID from URL like ?uid=xxxx
+    function getUIDFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('uid') || '';
+    }
+
+    const uid = getUIDFromURL();
     const dbUrl = `https://ta-bin-2-default-rtdb.firebaseio.com/data/${uid}.json`;
 
     async function check() {
       const pwInput = document.getElementById("password").value;
       const out = document.getElementById("output");
+      const debug = document.getElementById("debug");
 
       try {
         const res = await fetch(dbUrl);
@@ -64,16 +79,24 @@
 
         if (!data) {
           out.innerHTML = "❌ Script not found!";
+          debug.innerHTML = `UID: ${uid} <br> Firebase response: null`;
           return;
         }
 
-        if (pwInput === data.password) {
+        // Trim + case-insensitive check
+        const inputPw = pwInput.trim().toLowerCase();
+        const storedPw = data.password.trim().toLowerCase();
+
+        debug.innerHTML = `UID: ${uid} <br> Typed password: ${inputPw} <br> Stored password: ${storedPw}`;
+
+        if (inputPw === storedPw) {
           out.innerHTML = `<pre>${data.script}</pre>`;
         } else {
           out.innerHTML = "❌ Incorrect password!";
         }
       } catch (err) {
         out.innerHTML = "⚠️ Error loading script.";
+        debug.innerHTML = `UID: ${uid} <br> Error: ${err.message}`;
       }
     }
   </script>
