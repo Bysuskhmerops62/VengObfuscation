@@ -1,12 +1,22 @@
-app.get("/script/:id", async (req, res) => {
-  const { id } = req.params;
-  const ref = db.ref("data").child(id);
-  const snapshot = await ref.once("value");
-  const data = snapshot.val();
+const express = require("express");
+const fetch = require("node-fetch");
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  if (!data) return res.status(404).send("Script not found");
+app.get("/script/:uid", async (req, res) => {
+  const { uid } = req.params;
+  const firebaseUrl = `https://ta-bin-2-default-rtdb.firebaseio.com/data/${uid}.json`;
 
-  // Don't let browser guess it's HTML
+  const response = await fetch(firebaseUrl);
+  const data = await response.json();
+
+  if (!data || !data.script) return res.status(404).send("Script not found");
+
+  // Set as plain text for Roblox Executor
   res.set("Content-Type", "text/plain");
   res.send(data.script);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
